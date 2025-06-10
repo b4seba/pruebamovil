@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "680338742855",
+    "project_id": "pruebamovil-ed6e3",
+    "storage_bucket": "pruebamovil-ed6e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680338742855:android:894cf4f3d5ad7b7c149b62",
+        "android_client_info": {
+          "package_name": "com.example.pruebamovil"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1k6plMbSxTuOran8zATLJ1Y49Q_AWdTs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
