@@ -54,7 +54,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
         'fecha': FieldValue.serverTimestamp(),
       });
 
-      Navigator.pop(context); // Vuelve al dashboard
+      Navigator.pop(context); 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),

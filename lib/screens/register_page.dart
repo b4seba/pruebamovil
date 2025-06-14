@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -9,21 +10,21 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final TextEditingController _nombreController = TextEditingController();
-  final TextEditingController _rutController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _telefonoController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _passwordRepeatController = TextEditingController();
+  final _nombreCtrl    = TextEditingController();
+  final _rutCtrl       = TextEditingController();
+  final _emailCtrl     = TextEditingController();
+  final _telefonoCtrl  = TextEditingController();
+  final _passwordCtrl  = TextEditingController();
+  final _repeatPwCtrl  = TextEditingController();
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _rutController.dispose();
-    _emailController.dispose();
-    _telefonoController.dispose();
-    _passwordController.dispose();
-    _passwordRepeatController.dispose();
+    _nombreCtrl.dispose();
+    _rutCtrl.dispose();
+    _emailCtrl.dispose();
+    _telefonoCtrl.dispose();
+    _passwordCtrl.dispose();
+    _repeatPwCtrl.dispose();
     super.dispose();
   }
 
@@ -33,10 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/fondoazul.png',
-            fit: BoxFit.cover,
-          ),
+          Image.asset('assets/fondoazul.png', fit: BoxFit.cover),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -47,7 +45,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Image.asset('assets/logo.png', height: 100),
                     const SizedBox(height: 16),
                     const Text(
-                      'Registrar Usuario',
+                      'Registro Empleador',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -56,66 +54,43 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Nombre
-                    TextField(
-                      controller: _nombreController,
-                      decoration: _inputDecoration('Nombre completo', Icons.person),
-                    ),
+                    _buildTextField(_nombreCtrl, 'Nombre completo', Icons.person),
                     const SizedBox(height: 16),
-
-                    // RUT
-                    TextField(
-                      controller: _rutController,
-                      decoration: _inputDecoration('RUT', Icons.branding_watermark_rounded),
-                    ),
+                    _buildTextField(_rutCtrl, 'RUT', Icons.branding_watermark_rounded),
                     const SizedBox(height: 16),
-
-                    // Correo
-                    TextField(
-                      controller: _emailController,
+                    _buildTextField(
+                      _emailCtrl,
+                      'Correo electrónico',
+                      Icons.email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: _inputDecoration('Correo electrónico', Icons.email),
                     ),
                     const SizedBox(height: 16),
-
-                    // Teléfono
-                    TextField(
-                      controller: _telefonoController,
+                    _buildTextField(
+                      _telefonoCtrl,
+                      'Número de teléfono',
+                      Icons.phone,
                       keyboardType: TextInputType.phone,
-                      decoration: _inputDecoration('Número de teléfono', Icons.phone),
                     ),
                     const SizedBox(height: 16),
-
-                    // Contraseña
-                    TextField(
-                      controller: _passwordController,
+                    _buildTextField(
+                      _passwordCtrl,
+                      'Contraseña',
+                      Icons.lock,
                       obscureText: true,
-                      decoration: _inputDecoration('Contraseña', Icons.lock),
                     ),
                     const SizedBox(height: 16),
-
-                    // Repetir contraseña
-                    TextField(
-                      controller: _passwordRepeatController,
+                    _buildTextField(
+                      _repeatPwCtrl,
+                      'Repite la contraseña',
+                      Icons.lock_outline,
                       obscureText: true,
-                      decoration: _inputDecoration('Repite la contraseña', Icons.lock_outline),
                     ),
                     const SizedBox(height: 24),
 
-                    // Botón registrar
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: () {
-                          _registrarUsuario(
-                            _nombreController.text.trim(),
-                            _rutController.text.trim(),
-                            _emailController.text.trim(),
-                            _telefonoController.text.trim(),
-                            _passwordController.text.trim(),
-                            _passwordRepeatController.text.trim(),
-                          );
-                        },
+                        onPressed: _registrarUsuario,
                         icon: const Icon(Icons.person_add),
                         label: const Text("Registrar"),
                         style: FilledButton.styleFrom(
@@ -127,15 +102,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                      TextButton(
+                    const SizedBox(height: 16),
+                    TextButton(
                       onPressed: () {
                         Navigator.pushNamed(context, '/register_empleado');
                       },
-                      child: const Text(
-                        "¿Eres un trabajador? Registrate aquí",
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      child: const Text("¿Eres un trabajador? Regístrate aquí"),
                     ),
                   ],
                 ),
@@ -147,77 +119,88 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint, IconData icon) {
-    return InputDecoration(
-      hintText: hint,
-      prefixIcon: Icon(icon),
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(50),
-        borderSide: BorderSide.none,
+  Widget _buildTextField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+  }) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(50),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
 
-  Future<void> _registrarUsuario(
-    String nombre,
-    String rut,
-    String email,
-    String telefono,
-    String password,
-    String repetirPassword,
-  ) async {
-    if (nombre.isEmpty || rut.isEmpty || email.isEmpty || telefono.isEmpty || password.isEmpty || repetirPassword.isEmpty) {
-      _mostrarError("Por favor, completa todos los campos");
-      return;
-    }
+  Future<void> _registrarUsuario() async {
+    final nombre   = _nombreCtrl.text.trim();
+    final rut      = _rutCtrl.text.trim();
+    final email    = _emailCtrl.text.trim();
+    final telefono = _telefonoCtrl.text.trim();
+    final pw       = _passwordCtrl.text.trim();
+    final pw2      = _repeatPwCtrl.text.trim();
 
+    if (nombre.isEmpty ||
+        rut.isEmpty ||
+        email.isEmpty ||
+        telefono.isEmpty ||
+        pw.isEmpty ||
+        pw2.isEmpty) {
+      return _mostrarError("Por favor, completa todos los campos");
+    }
     if (!email.contains('@')) {
-      _mostrarError("Correo electrónico no válido");
-      return;
+      return _mostrarError("Correo electrónico no válido");
     }
-
-    if (password.length < 6) {
-      _mostrarError("La contraseña debe tener al menos 6 caracteres");
-      return;
+    if (pw.length < 6) {
+      return _mostrarError("La contraseña debe tener al menos 6 caracteres");
     }
-
-    if (password != repetirPassword) {
-      _mostrarError("Las contraseñas no coinciden");
-      return;
+    if (pw != pw2) {
+      return _mostrarError("Las contraseñas no coinciden");
     }
 
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final cred = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: pw);
+      final u = cred.user!;
 
-      final user = credential.user;
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(u.uid)
+          .set({
+        'nombre':    nombre,
+        'rut':       rut,
+        'email':     email,
+        'telefono':  telefono,
+        'rol':       'empleador',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-      if (user != null) {
-        await user.updateDisplayName(nombre);
-        await user.reload();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Registro exitoso"),
-            backgroundColor: Color.fromARGB(255, 0, 255, 85),
-          ),
-        );
-
-        Navigator.pushReplacementNamed(context, '/');
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Registro exitoso"),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
       _mostrarError(e.message ?? "Error desconocido");
     }
   }
 
-  void _mostrarError(String mensaje) {
+  void _mostrarError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
     );
   }
 }

@@ -10,23 +10,23 @@ class RegisterEmpleadoPage extends StatefulWidget {
 }
 
 class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
-  final TextEditingController _nombreController = TextEditingController();
-  final TextEditingController _rutController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _telefonoController = TextEditingController();
-  final TextEditingController _profesionController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _passwordRepeatController = TextEditingController();
+  final _nombreCtrl      = TextEditingController();
+  final _rutCtrl         = TextEditingController();
+  final _emailCtrl       = TextEditingController();
+  final _telefonoCtrl    = TextEditingController();
+  final _profesionCtrl   = TextEditingController();
+  final _passwordCtrl    = TextEditingController();
+  final _repeatPwCtrl    = TextEditingController();
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _rutController.dispose();
-    _emailController.dispose();
-    _telefonoController.dispose();
-    _profesionController.dispose();
-    _passwordController.dispose();
-    _passwordRepeatController.dispose();
+    _nombreCtrl.dispose();
+    _rutCtrl.dispose();
+    _emailCtrl.dispose();
+    _telefonoCtrl.dispose();
+    _profesionCtrl.dispose();
+    _passwordCtrl.dispose();
+    _repeatPwCtrl.dispose();
     super.dispose();
   }
 
@@ -36,10 +36,7 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/fondoazul.png',
-            fit: BoxFit.cover,
-          ),
+          Image.asset('assets/fondoazul.png', fit: BoxFit.cover),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -50,7 +47,7 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
                     Image.asset('assets/logo.png', height: 100),
                     const SizedBox(height: 16),
                     const Text(
-                      'Registro de Trabajador',
+                      'Registro Trabajador',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -59,35 +56,45 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    _textField(_nombreController, 'Nombre completo', Icons.person),
+                    _buildTextField(_nombreCtrl, 'Nombre completo', Icons.person),
                     const SizedBox(height: 16),
-                    _textField(_rutController, 'RUT', Icons.branding_watermark_rounded),
+                    _buildTextField(_rutCtrl, 'RUT', Icons.branding_watermark_rounded),
                     const SizedBox(height: 16),
-                    _textField(_emailController, 'Correo electrónico', Icons.email, TextInputType.emailAddress),
+                    _buildTextField(
+                      _emailCtrl,
+                      'Correo electrónico',
+                      Icons.email,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
                     const SizedBox(height: 16),
-                    _textField(_telefonoController, 'Número de teléfono', Icons.phone, TextInputType.phone),
+                    _buildTextField(
+                      _telefonoCtrl,
+                      'Número de teléfono',
+                      Icons.phone,
+                      keyboardType: TextInputType.phone,
+                    ),
                     const SizedBox(height: 16),
-                    _textField(_passwordController, 'Contraseña', Icons.lock),
+                    _buildTextField(
+                      _passwordCtrl,
+                      'Contraseña',
+                      Icons.lock,
+                      obscureText: true,
+                    ),
                     const SizedBox(height: 16),
-                    _textField(_passwordRepeatController, 'Repite la contraseña', Icons.lock_outline),
+                    _buildTextField(
+                      _repeatPwCtrl,
+                      'Repite la contraseña',
+                      Icons.lock_outline,
+                      obscureText: true,
+                    ),
                     const SizedBox(height: 16),
-                    _textField(_profesionController, 'Profesión', Icons.work),
+                    _buildTextField(_profesionCtrl, 'Profesión', Icons.work),
                     const SizedBox(height: 24),
 
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: () {
-                          _registrarTrabajador(
-                            _nombreController.text.trim(),
-                            _rutController.text.trim(),
-                            _emailController.text.trim(),
-                            _telefonoController.text.trim(),
-                            _profesionController.text.trim(),
-                            _passwordController.text.trim(),
-                            _passwordRepeatController.text.trim(),
-                          );
-                        },
+                        onPressed: _registrarTrabajador,
                         icon: const Icon(Icons.person_add),
                         label: const Text("Registrar"),
                         style: FilledButton.styleFrom(
@@ -102,12 +109,9 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context, '/register');
+                        Navigator.pop(context);
                       },
-                      child: const Text(
-                        "¿No eres trabajador? Volver al registro normal",
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      child: const Text("¿No eres trabajador? Volver"),
                     ),
                   ],
                 ),
@@ -119,17 +123,17 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
     );
   }
 
-  Widget _textField(
-    TextEditingController controller,
+  Widget _buildTextField(
+    TextEditingController ctrl,
     String hint,
-    IconData icon, [
+    IconData icon, {
     TextInputType keyboardType = TextInputType.text,
-    bool obscure = false,
-  ]) {
+    bool obscureText = false,
+  }) {
     return TextField(
-      controller: controller,
+      controller: ctrl,
       keyboardType: keyboardType,
-      obscureText: obscure,
+      obscureText: obscureText,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon),
@@ -143,77 +147,71 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
     );
   }
 
-  Future<void> _registrarTrabajador(
-    String nombre,
-    String rut,
-    String email,
-    String telefono,
-    String profesion,
-    String password,
-    String repetirPassword,
-  ) async {
-    if (nombre.isEmpty || rut.isEmpty || email.isEmpty || telefono.isEmpty || profesion.isEmpty || password.isEmpty || repetirPassword.isEmpty) {
-      _mostrarError("Por favor, completa todos los campos");
-      return;
-    }
+  Future<void> _registrarTrabajador() async {
+    final nombre    = _nombreCtrl.text.trim();
+    final rut       = _rutCtrl.text.trim();
+    final email     = _emailCtrl.text.trim();
+    final telefono  = _telefonoCtrl.text.trim();
+    final profesion = _profesionCtrl.text.trim();
+    final pw        = _passwordCtrl.text.trim();
+    final pw2       = _repeatPwCtrl.text.trim();
 
+    if (nombre.isEmpty ||
+        rut.isEmpty ||
+        email.isEmpty ||
+        telefono.isEmpty ||
+        profesion.isEmpty ||
+        pw.isEmpty ||
+        pw2.isEmpty) {
+      return _mostrarError("Por favor, completa todos los campos");
+    }
     if (!email.contains('@')) {
-      _mostrarError("Correo electrónico no válido");
-      return;
+      return _mostrarError("Correo electrónico no válido");
     }
-
-    if (password.length < 6) {
-      _mostrarError("La contraseña debe tener al menos 6 caracteres");
-      return;
+    if (pw.length < 6) {
+      return _mostrarError("La contraseña debe tener al menos 6 caracteres");
     }
-
-    if (password != repetirPassword) {
-      _mostrarError("Las contraseñas no coinciden");
-      return;
+    if (pw != pw2) {
+      return _mostrarError("Las contraseñas no coinciden");
     }
 
     try {
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final cred = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: pw);
+      final u = cred.user!;
 
-      final user = credential.user;
+      // (Opcional) actualiza displayName si lo deseas:
+      await u.updateDisplayName(nombre);
+      await u.reload();
 
-      if (user != null) {
-        await user.updateDisplayName(nombre);
-        await user.reload();
+      await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(u.uid)
+          .set({
+        'nombre':     nombre,
+        'rut':        rut,
+        'email':      email,
+        'telefono':   telefono,
+        'profesion':  profesion,
+        'rol':        'trabajador',
+        'createdAt':  FieldValue.serverTimestamp(),
+      });
 
-        // Guardar en Firestore si usas Firestore
-        await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).set({
-          'nombre': nombre,
-          'rut': rut,
-          'email': email,
-          'telefono': telefono,
-          'rol': 'trabajador',
-          'profesion': profesion,
-          'uid': user.uid,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Registro exitoso"),
-            backgroundColor: Color.fromARGB(255, 0, 255, 85),
-          ),
-        );
-
-        Navigator.pushReplacementNamed(context, '/');
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Registro exitoso"),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
       _mostrarError(e.message ?? "Error desconocido");
     }
   }
 
-  void _mostrarError(String mensaje) {
+  void _mostrarError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
     );
   }
 }

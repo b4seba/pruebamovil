@@ -1,21 +1,22 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _emailcontroller = TextEditingController();
-  final TextEditingController _passwordcontroller = TextEditingController();
+  final _emailCtrl    = TextEditingController();
+  final _passwordCtrl = TextEditingController();
 
   @override
   void dispose() {
-    _emailcontroller.dispose();
-    _passwordcontroller.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
@@ -25,13 +26,7 @@ class _LoginPageState extends State<LoginPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Fondo
-          Image.asset(
-            'assets/fondoazul.png',
-            fit: BoxFit.cover,
-          ),
-
-          // Contenido encima del fondo
+          Image.asset('assets/fondoazul.png', fit: BoxFit.cover),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -39,28 +34,21 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo
-                    Image.asset(
-                      'assets/logo.png',
-                      height: 100,
-                    ),
+                    Image.asset('assets/logo.png', height: 100),
                     const SizedBox(height: 16),
-
-                    // Título
                     const Text(
                       "NeighborJob",
                       style: TextStyle(
                         fontSize: 28,
-                        color: Colors.black,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
-
                     const SizedBox(height: 32),
 
                     // Email
                     TextField(
-                      controller: _emailcontroller,
+                      controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: "Correo electrónico",
@@ -77,11 +65,11 @@ class _LoginPageState extends State<LoginPage> {
 
                     // Password
                     TextField(
-                      controller: _passwordcontroller,
+                      controller: _passwordCtrl,
                       obscureText: true,
                       decoration: InputDecoration(
                         hintText: "Contraseña",
-                        prefixIcon: const Icon(Icons.password),
+                        prefixIcon: const Icon(Icons.lock),
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(
@@ -96,17 +84,12 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: () {
-                          fnIniciarSesion(
-                            _emailcontroller.text,
-                            _passwordcontroller.text,
-                          );
-                        },
-                        label: const Text("Iniciar sesión"),
+                        onPressed: _fnIniciarSesion,
                         icon: const Icon(Icons.login),
+                        label: const Text("Iniciar sesión"),
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.blue[400],
-                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                       ),
                     ),
@@ -114,13 +97,8 @@ class _LoginPageState extends State<LoginPage> {
 
                     // Registro
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/register');
-                      },
-                      child: const Text(
-                        "¿No tienes cuenta? Registrate",
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      onPressed: () => Navigator.pushNamed(context, '/register'),
+                      child: const Text("¿No tienes cuenta? Regístrate"),
                     ),
                   ],
                 ),
@@ -132,37 +110,65 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> fnIniciarSesion(String email, String password) async {
-    if (email.trim().isEmpty || password.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Por favor, completa todos los campos"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+  Future<void> _fnIniciarSesion() async {
+    final email = _emailCtrl.text.trim();
+    final pass  = _passwordCtrl.text.trim();
+
+    if (email.isEmpty || pass.isEmpty) {
+      return _showError('Completa todos los campos');
     }
 
     try {
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      Navigator.pushNamed(context, '/dashboard');
-      print("Login correcto");
-    } on FirebaseAuthException catch (e) {
-      String message = "Error al iniciar sesión";
-      if (e.code == 'user-not-found') {
-        message = 'Usuario no encontrado';
-      } else if (e.code == 'wrong-password') {
-        message = 'Contraseña incorrecta';
+      final cred = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: pass);
+      final uid = cred.user!.uid;
+
+      // Leemos el documento del usuario
+      final docSnap = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 10));
+
+      if (!docSnap.exists) {
+        return _showError('Usuario no encontrado.');
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
+
+      final data = docSnap.data()!;
+      final role = data['rol'] as String?;
+
+      // Redirigimos porl ol 
+      if (role == 'trabajador') {
+        Navigator.pushReplacementNamed(context, '/dashboardempleado');
+      } else if (role == 'empleador') {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+  
+      } else {
+        _showError('Rol de usuario desconocido.');
+      }
+
+    } on TimeoutException {
+      _showError("Error de conexión con Firestore. Intenta de nuevo.");
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+          _showError('Usuario no encontrado');
+          break;
+        case 'wrong-password':
+          _showError('Contraseña incorrecta');
+          break;
+        default:
+          _showError('Error al iniciar sesión');
+      }
+    } catch (e) {
+      _showError("Error inesperado. Revisa la consola.");
+      print(e);
     }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+    );
   }
 }
