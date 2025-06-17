@@ -121,6 +121,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       onPressed: () {
                         Navigator.pushNamed(context, '/register_empleado');
                       },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue[700],
+                      ),
                       child: const Text("¿Eres un trabajador? Regístrate aquí"),
                     ),
                   ],

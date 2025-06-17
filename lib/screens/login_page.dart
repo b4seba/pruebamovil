@@ -10,7 +10,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailCtrl    = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
 
   @override
@@ -106,7 +106,11 @@ class _LoginPageState extends State<LoginPage> {
 
                     // Registro
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/register'),
+                      onPressed:
+                          () => Navigator.pushNamed(context, '/register'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue[700],
+                      ),
                       child: const Text("¿No tienes cuenta? Regístrate"),
                     ),
                   ],
@@ -121,15 +125,17 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _fnIniciarSesion() async {
     final email = _emailCtrl.text.trim();
-    final pass  = _passwordCtrl.text.trim();
+    final pass = _passwordCtrl.text.trim();
 
     if (email.isEmpty || pass.isEmpty) {
       return _showError('Completa todos los campos');
     }
 
     try {
-      final cred = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: pass);
+      final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: pass,
+      );
       final uid = cred.user!.uid;
 
       // Leemos el documento del usuario
@@ -146,16 +152,14 @@ class _LoginPageState extends State<LoginPage> {
       final data = docSnap.data()!;
       final role = data['rol'] as String?;
 
-      // Redirigimos porl ol 
+      // Redirigimos porl ol
       if (role == 'trabajador') {
         Navigator.pushReplacementNamed(context, '/dashboardempleado');
       } else if (role == 'empleador') {
         Navigator.pushReplacementNamed(context, '/dashboard');
-  
       } else {
         _showError('Rol de usuario desconocido.');
       }
-
     } on TimeoutException {
       _showError("Error de conexión con Firestore. Intenta de nuevo.");
     } on FirebaseAuthException catch (e) {
@@ -176,8 +180,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 }

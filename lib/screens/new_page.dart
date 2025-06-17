@@ -9,37 +9,30 @@ class NewPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/fondoazul.png',
-            fit: BoxFit.cover,
-          ),
+          Image.asset('assets/fondoazul.png', fit: BoxFit.cover),
 
           Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 90),
 
-              // Texto y logo centrados 
+              // Logo y texto centrados - diseño minimalista
               Column(
                 children: [
-                  const Text(
-                    'NeighborJob',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  // Logo simple sin efectos
                   Image.asset(
                     'assets/logo.png',
-                    width: 150,
-                    height: 150,
+                    width: 500,
+                    height: 500,
+                    fit: BoxFit.contain,
                   ),
+                  const SizedBox(height: 20),
+
+                  // Nombre de la app - estilo minimalista
                 ],
               ),
 
-              // Botones
+              // Botones originales
               Padding(
                 padding: const EdgeInsets.only(bottom: 40.0),
                 child: Row(
@@ -49,12 +42,27 @@ class NewPage extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushNamed(context, '/login_page');
                       },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.blue[700],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        minimumSize: const Size(140, 50),
+                      ),
                       child: const Text('Iniciar sesión'),
                     ),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pushNamed(context, '/register');
                       },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.blue[700],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                      ),
                       child: const Text('Registrarse'),
                     ),
                   ],
