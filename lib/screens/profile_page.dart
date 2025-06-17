@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'login_page.dart';
-
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +12,7 @@ class ProfilePage extends StatelessWidget {
       backgroundColor: const Color(0xFF252147),
       appBar: AppBar(
         backgroundColor: const Color(0xFF2E2B5F),
-        title: const Text('Perfil', style: TextStyle(color: Colors.white70),),
+        title: const Text('Perfil', style: TextStyle(color: Colors.white70)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -41,15 +39,15 @@ class ProfilePage extends StatelessWidget {
                     style: const TextStyle(color: Colors.white70, fontSize: 18),
                   ),
                   SizedBox(height: 16),
-TextButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/');
-                  },
-                  child: const Text(
-                    "Cerrar sesión",
-                    style: const TextStyle(color: Colors.red),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/');
+                    },
+                    child: const Text(
+                      "Cerrar sesión",
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
-                ),
                 ],
               ),
             ),

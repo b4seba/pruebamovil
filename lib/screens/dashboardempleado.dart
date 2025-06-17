@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DashboardEmpleadoPage extends StatefulWidget {
-  const DashboardEmpleadoPage({Key? key}) : super(key: key);
+  const DashboardEmpleadoPage({super.key});
 
   @override
   State<DashboardEmpleadoPage> createState() => _DashboardEmpleadoPageState();
@@ -13,12 +13,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
   final List<String> _tabs = [
     "Trabajos activos",
     "Trabajos disponibles",
-    "Historial"
+    "Historial",
   ];
 
-  final List<String> _activeJobs = [];      
-  final List<String> _availableJobs = [];  
-  final List<String> _historyJobs = [];    
+  final List<String> _activeJobs = [];
+  final List<String> _availableJobs = [];
+  final List<String> _historyJobs = [];
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +45,8 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             children: List.generate(_tabs.length, (index) {
               return ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _selectedTab == index
-                      ? Colors.blue[800]
-                      : Colors.blue,
+                  backgroundColor:
+                      _selectedTab == index ? Colors.blue[800] : Colors.blue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -62,9 +61,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             }),
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: _buildTabContent(),
-          ),
+          Expanded(child: _buildTabContent()),
         ],
       ),
     );
@@ -100,10 +97,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
       return Center(
         child: Text(
           emptyMessage,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       );
     }
@@ -119,11 +113,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             title: Text(job),
             subtitle: const Text("Detalles del trabajo"),
             onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/job_detail',
-                arguments: job,
-              );
+              Navigator.pushNamed(context, '/job_detail', arguments: job);
             },
           ),
         );

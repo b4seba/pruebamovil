@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DashboardEmpleadorPage extends StatefulWidget {
-  const DashboardEmpleadorPage({Key? key}) : super(key: key);
+  const DashboardEmpleadorPage({super.key});
 
   @override
   State<DashboardEmpleadorPage> createState() => _DashboardEmpleadorPageState();
@@ -15,9 +15,7 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Dashboard Empleador"),
-      ),
+      appBar: AppBar(title: const Text("Dashboard Empleador")),
       body: Column(
         children: [
           const SizedBox(height: 12),
@@ -26,8 +24,11 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
             children: List.generate(_tabs.length, (i) {
               return ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _selectedTab == i ? Colors.blue[800] : Colors.blue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  backgroundColor:
+                      _selectedTab == i ? Colors.blue[800] : Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 onPressed: () => setState(() => _selectedTab = i),
                 child: Text(_tabs[i]),
@@ -35,9 +36,7 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
             }),
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: _buildTab(_selectedTab),
-          ),
+          Expanded(child: _buildTab(_selectedTab)),
         ],
       ),
       bottomNavigationBar: Padding(
@@ -47,7 +46,9 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
             backgroundColor: Colors.blue[800],
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
           ),
           child: const Text("Crear trabajo", style: TextStyle(fontSize: 16)),
         ),
@@ -56,30 +57,30 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
   }
 
   Widget _buildTab(int index) {
-    late Query _query;
+    late Query query;
     switch (index) {
       case 0:
         // Trabajos activos
-        _query = FirebaseFirestore.instance
+        query = FirebaseFirestore.instance
             .collection('trabajos')
             .where('estado', isEqualTo: 'activo');
         break;
       case 1:
-        // Trabajos disponibles 
-        _query = FirebaseFirestore.instance
+        // Trabajos disponibles
+        query = FirebaseFirestore.instance
             .collection('trabajos')
             .where('estado', isEqualTo: 'disponible');
         break;
       case 2:
         // Historial (finalizados)
-        _query = FirebaseFirestore.instance
+        query = FirebaseFirestore.instance
             .collection('trabajos')
             .where('estado', isEqualTo: 'finalizado');
         break;
     }
 
     return StreamBuilder<QuerySnapshot>(
-      stream: _query.snapshots(),
+      stream: query.snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
@@ -95,8 +96,8 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
               index == 0
                   ? 'No tienes trabajos activos.'
                   : index == 1
-                      ? 'No hay trabajos disponibles.'
-                      : 'Aún no tienes historial.',
+                  ? 'No hay trabajos disponibles.'
+                  : 'Aún no tienes historial.',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           );
@@ -114,10 +115,12 @@ class _DashboardEmpleadorPageState extends State<DashboardEmpleadorPage> {
                 subtitle: Text(data['descripcion'] ?? ''),
                 trailing: Text(
                   data['estado']?.toString().toUpperCase() ?? '',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                onTap: () {
-                },
+                onTap: () {},
               ),
             );
           },

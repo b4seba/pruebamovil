@@ -10,13 +10,13 @@ class RegisterEmpleadoPage extends StatefulWidget {
 }
 
 class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
-  final _nombreCtrl      = TextEditingController();
-  final _rutCtrl         = TextEditingController();
-  final _emailCtrl       = TextEditingController();
-  final _telefonoCtrl    = TextEditingController();
-  final _profesionCtrl   = TextEditingController();
-  final _passwordCtrl    = TextEditingController();
-  final _repeatPwCtrl    = TextEditingController();
+  final _nombreCtrl = TextEditingController();
+  final _rutCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _telefonoCtrl = TextEditingController();
+  final _profesionCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _repeatPwCtrl = TextEditingController();
 
   @override
   void dispose() {
@@ -33,6 +33,15 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -56,9 +65,17 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    _buildTextField(_nombreCtrl, 'Nombre completo', Icons.person),
+                    _buildTextField(
+                      _nombreCtrl,
+                      'Nombre completo',
+                      Icons.person,
+                    ),
                     const SizedBox(height: 16),
-                    _buildTextField(_rutCtrl, 'RUT', Icons.branding_watermark_rounded),
+                    _buildTextField(
+                      _rutCtrl,
+                      'RUT',
+                      Icons.branding_watermark_rounded,
+                    ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       _emailCtrl,
@@ -148,13 +165,13 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
   }
 
   Future<void> _registrarTrabajador() async {
-    final nombre    = _nombreCtrl.text.trim();
-    final rut       = _rutCtrl.text.trim();
-    final email     = _emailCtrl.text.trim();
-    final telefono  = _telefonoCtrl.text.trim();
+    final nombre = _nombreCtrl.text.trim();
+    final rut = _rutCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final telefono = _telefonoCtrl.text.trim();
     final profesion = _profesionCtrl.text.trim();
-    final pw        = _passwordCtrl.text.trim();
-    final pw2       = _repeatPwCtrl.text.trim();
+    final pw = _passwordCtrl.text.trim();
+    final pw2 = _repeatPwCtrl.text.trim();
 
     if (nombre.isEmpty ||
         rut.isEmpty ||
@@ -176,25 +193,24 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
     }
 
     try {
-      final cred = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: pw);
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: pw,
+      );
       final u = cred.user!;
 
       // (Opcional) actualiza displayName si lo deseas:
       await u.updateDisplayName(nombre);
       await u.reload();
 
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(u.uid)
-          .set({
-        'nombre':     nombre,
-        'rut':        rut,
-        'email':      email,
-        'telefono':   telefono,
-        'profesion':  profesion,
-        'rol':        'trabajador',
-        'createdAt':  FieldValue.serverTimestamp(),
+      await FirebaseFirestore.instance.collection('usuarios').doc(u.uid).set({
+        'nombre': nombre,
+        'rut': rut,
+        'email': email,
+        'telefono': telefono,
+        'profesion': profesion,
+        'rol': 'trabajador',
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -203,15 +219,15 @@ class _RegisterEmpleadoPageState extends State<RegisterEmpleadoPage> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, '/login_page');
     } on FirebaseAuthException catch (e) {
       _mostrarError(e.message ?? "Error desconocido");
     }
   }
 
   void _mostrarError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 }

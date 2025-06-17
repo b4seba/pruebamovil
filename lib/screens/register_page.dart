@@ -10,12 +10,12 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final _nombreCtrl    = TextEditingController();
-  final _rutCtrl       = TextEditingController();
-  final _emailCtrl     = TextEditingController();
-  final _telefonoCtrl  = TextEditingController();
-  final _passwordCtrl  = TextEditingController();
-  final _repeatPwCtrl  = TextEditingController();
+  final _nombreCtrl = TextEditingController();
+  final _rutCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _telefonoCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _repeatPwCtrl = TextEditingController();
 
   @override
   void dispose() {
@@ -31,6 +31,12 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      extendBodyBehindAppBar: true,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -54,9 +60,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 32),
 
-                    _buildTextField(_nombreCtrl, 'Nombre completo', Icons.person),
+                    _buildTextField(
+                      _nombreCtrl,
+                      'Nombre completo',
+                      Icons.person,
+                    ),
                     const SizedBox(height: 16),
-                    _buildTextField(_rutCtrl, 'RUT', Icons.branding_watermark_rounded),
+                    _buildTextField(
+                      _rutCtrl,
+                      'RUT',
+                      Icons.branding_watermark_rounded,
+                    ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       _emailCtrl,
@@ -144,12 +158,12 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _registrarUsuario() async {
-    final nombre   = _nombreCtrl.text.trim();
-    final rut      = _rutCtrl.text.trim();
-    final email    = _emailCtrl.text.trim();
+    final nombre = _nombreCtrl.text.trim();
+    final rut = _rutCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
     final telefono = _telefonoCtrl.text.trim();
-    final pw       = _passwordCtrl.text.trim();
-    final pw2      = _repeatPwCtrl.text.trim();
+    final pw = _passwordCtrl.text.trim();
+    final pw2 = _repeatPwCtrl.text.trim();
 
     if (nombre.isEmpty ||
         rut.isEmpty ||
@@ -170,19 +184,18 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      final cred = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: pw);
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: pw,
+      );
       final u = cred.user!;
 
-      await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(u.uid)
-          .set({
-        'nombre':    nombre,
-        'rut':       rut,
-        'email':     email,
-        'telefono':  telefono,
-        'rol':       'empleador',
+      await FirebaseFirestore.instance.collection('usuarios').doc(u.uid).set({
+        'nombre': nombre,
+        'rut': rut,
+        'email': email,
+        'telefono': telefono,
+        'rol': 'empleador',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -192,15 +205,15 @@ class _RegisterPageState extends State<RegisterPage> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, '/login_page');
     } on FirebaseAuthException catch (e) {
       _mostrarError(e.message ?? "Error desconocido");
     }
   }
 
   void _mostrarError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 }
