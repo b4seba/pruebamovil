@@ -62,6 +62,7 @@ class NewPage extends StatelessWidget {
                           horizontal: 24,
                           vertical: 16,
                         ),
+                        minimumSize: const Size(140, 50),
                       ),
                       child: const Text('Registrarse'),
                     ),

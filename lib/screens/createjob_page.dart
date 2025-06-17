@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CreateJobPage extends StatefulWidget {
   const CreateJobPage({super.key});
@@ -12,6 +13,7 @@ class CreateJobPage extends StatefulWidget {
 class _CreateJobPageState extends State<CreateJobPage> {
   final TextEditingController _titulo = TextEditingController();
   final TextEditingController _descripcion = TextEditingController();
+  final TextEditingController _direccion = TextEditingController();
   String? _profesionSeleccionada;
 
   // Lista de profesiones disponibles
@@ -52,6 +54,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
   void dispose() {
     _titulo.dispose();
     _descripcion.dispose();
+    _direccion.dispose();
     super.dispose();
   }
 
@@ -74,9 +77,11 @@ class _CreateJobPageState extends State<CreateJobPage> {
 
     final titulo = _titulo.text.trim();
     final descripcion = _descripcion.text.trim();
+    final direccion = _direccion.text.trim();
 
     if (titulo.isEmpty ||
         descripcion.isEmpty ||
+        direccion.isEmpty ||
         _profesionSeleccionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -95,6 +100,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
       await FirebaseFirestore.instance.collection('trabajos').add({
         'titulo': titulo,
         'descripcion': descripcion,
+        'direccion': direccion,
         'profesion': _profesionSeleccionada,
         'estado': 'disponible',
         'autorId': user.uid,
@@ -118,6 +124,49 @@ class _CreateJobPageState extends State<CreateJobPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error: $e"),
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // Función para abrir Google Maps con la dirección
+  Future<void> _abrirGoogleMaps() async {
+    final direccion = _direccion.text.trim();
+
+    if (direccion.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Primero escribe una dirección"),
+          backgroundColor: Colors.orange,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Codificar la dirección para URL
+    final direccionCodificada = Uri.encodeComponent(direccion);
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=$direccionCodificada';
+
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        throw 'No se pudo abrir Google Maps';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al abrir Google Maps: $e"),
           backgroundColor: Colors.red,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -193,6 +242,42 @@ class _CreateJobPageState extends State<CreateJobPage> {
                       _descripcion,
                       Icons.description,
                       maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Campo dirección con enlace a Google Maps
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _direccion,
+                        decoration: InputDecoration(
+                          hintText:
+                              "Dirección del trabajo (ej: Av. Providencia 123, Santiago)",
+                          prefixIcon: const Icon(Icons.location_on),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.map, color: Colors.blue),
+                            onPressed: () => _abrirGoogleMaps(),
+                            tooltip: 'Ver en Google Maps',
+                          ),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(50)),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
 
@@ -297,7 +382,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            "• Sé específico en el título\n• Describe claramente lo que necesitas\n• Selecciona la profesión correcta\n• Los empleados de esa profesión verán tu trabajo",
+                            "• Sé específico en el título\n• Describe claramente lo que necesitas\n• Incluye la dirección exacta del trabajo\n• Usa el botón del mapa para verificar la ubicación\n• Selecciona la profesión correcta\n• Los empleados de esa profesión verán tu trabajo",
                             style: TextStyle(
                               color: Colors.black87,
                               fontSize: 14,

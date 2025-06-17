@@ -66,12 +66,54 @@ class _RegisterPageState extends State<RegisterPage> {
                       Icons.person,
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
-                      _rutCtrl,
-                      'RUT',
-                      Icons.branding_watermark_rounded,
+
+                    // Campo RUT con validación especial
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(50),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _rutCtrl,
+                        keyboardType: TextInputType.text,
+                        onChanged: (value) {
+                          if (value.length <= 12) {
+                            // Limitar longitud
+                            String formatted = _formatearRut(value);
+                            if (formatted != value) {
+                              _rutCtrl.value = TextEditingValue(
+                                text: formatted,
+                                selection: TextSelection.collapsed(
+                                  offset: formatted.length,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'RUT (ej: 12.345.678-9)',
+                          prefixIcon: const Icon(
+                            Icons.branding_watermark_rounded,
+                          ),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(50)),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
+
                     _buildTextField(
                       _emailCtrl,
                       'Correo electrónico',
@@ -143,21 +185,96 @@ class _RegisterPageState extends State<RegisterPage> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
   }) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(50),
-          borderSide: BorderSide.none,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(50),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: ctrl,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon),
+          border: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(50)),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
+  }
+
+  // Función para formatear RUT automáticamente
+  String _formatearRut(String rut) {
+    // Remover puntos y guión existentes
+    rut = rut.replaceAll(RegExp(r'[.-]'), '');
+
+    // Solo permitir números y K/k
+    rut = rut.replaceAll(RegExp(r'[^0-9Kk]'), '');
+
+    if (rut.length < 2) return rut;
+
+    // Separar dígito verificador
+    String cuerpo = rut.substring(0, rut.length - 1);
+    String dv = rut.substring(rut.length - 1);
+
+    // Formatear cuerpo con puntos
+    String cuerpoFormateado = '';
+    for (int i = 0; i < cuerpo.length; i++) {
+      if (i > 0 && (cuerpo.length - i) % 3 == 0) {
+        cuerpoFormateado += '.';
+      }
+      cuerpoFormateado += cuerpo[i];
+    }
+
+    return '$cuerpoFormateado-$dv';
+  }
+
+  // Función para validar RUT chileno
+  bool _validarRut(String rut) {
+    // Remover puntos y guión
+    rut = rut.replaceAll(RegExp(r'[.-]'), '');
+
+    // Verificar longitud
+    if (rut.length < 8 || rut.length > 9) return false;
+
+    // Separar cuerpo y dígito verificador
+    String cuerpo = rut.substring(0, rut.length - 1);
+    String dv = rut.substring(rut.length - 1).toLowerCase();
+
+    // Verificar que el cuerpo sean solo números
+    if (!RegExp(r'^[0-9]+$').hasMatch(cuerpo)) return false;
+
+    // Calcular dígito verificador
+    int suma = 0;
+    int multiplicador = 2;
+
+    for (int i = cuerpo.length - 1; i >= 0; i--) {
+      suma += int.parse(cuerpo[i]) * multiplicador;
+      multiplicador = multiplicador == 7 ? 2 : multiplicador + 1;
+    }
+
+    int resto = suma % 11;
+    String dvCalculado =
+        resto == 0
+            ? '0'
+            : resto == 1
+            ? 'k'
+            : (11 - resto).toString();
+
+    return dv == dvCalculado;
   }
 
   Future<void> _registrarUsuario() async {
@@ -176,12 +293,22 @@ class _RegisterPageState extends State<RegisterPage> {
         pw2.isEmpty) {
       return _mostrarError("Por favor, completa todos los campos");
     }
+
     if (!email.contains('@')) {
       return _mostrarError("Correo electrónico no válido");
     }
+
+    // Validación de RUT chileno
+    if (!_validarRut(rut)) {
+      return _mostrarError(
+        "RUT inválido. Verifica el formato y dígito verificador",
+      );
+    }
+
     if (pw.length < 6) {
       return _mostrarError("La contraseña debe tener al menos 6 caracteres");
     }
+
     if (pw != pw2) {
       return _mostrarError("Las contraseñas no coinciden");
     }
@@ -203,9 +330,13 @@ class _RegisterPageState extends State<RegisterPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Registro exitoso"),
+        SnackBar(
+          content: const Text("Registro exitoso"),
           backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       Navigator.pushReplacementNamed(context, '/login_page');
@@ -215,8 +346,13 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _mostrarError(String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.red,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 }
