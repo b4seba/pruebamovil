@@ -43,7 +43,8 @@ class NewPage extends StatelessWidget {
                         Navigator.pushNamed(context, '/login_page');
                       },
                       style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.blue[700],
+                        backgroundColor: const Color(0xFF1E88E5),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 16,
@@ -57,7 +58,8 @@ class NewPage extends StatelessWidget {
                         Navigator.pushNamed(context, '/register');
                       },
                       style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.blue[700],
+                        backgroundColor: const Color(0xFF1E88E5),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 16,
