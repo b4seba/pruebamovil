@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// Clase principal del Dashboard para empleados.
+/// Es un StatefulWidget porque su estado (pestaña seleccionada, profesión del usuario)
+/// puede cambiar durante la vida del widget.
 class DashboardEmpleadoPage extends StatefulWidget {
   const DashboardEmpleadoPage({super.key});
 
@@ -9,62 +12,81 @@ class DashboardEmpleadoPage extends StatefulWidget {
   State<DashboardEmpleadoPage> createState() => _DashboardEmpleadoPageState();
 }
 
+/// Estado asociado a DashboardEmpleadoPage.
+/// Contiene la lógica y los datos mutables del widget.
 class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
+  // Índice de la pestaña actualmente seleccionada (0: Mis Trabajos, 1: Disponibles, 2: Historial).
   int _selectedTab = 0;
+
+  // Instancia del usuario actualmente autenticado. Es nulo si no hay usuario logueado.
   final User? currentUser = FirebaseAuth.instance.currentUser;
+
+  // Variable para almacenar la profesión del usuario, cargada desde Firestore.
   String? _profesionUsuario;
+
+  // Bandera para indicar si la profesión del usuario aún se está cargando.
   bool _cargandoProfesion = true;
 
-  final List<String> _tabs = ["Mis Trabajos", "Disponibles", "Historial"];
-
+  /// Método que se llama una vez cuando el estado se inserta en el árbol de widgets.
+  /// Se utiliza para inicializar datos, como cargar la profesión del usuario.
   @override
   void initState() {
     super.initState();
     _cargarProfesionUsuario();
   }
 
-  // Cargar la profesión del usuario desde Firestore
+  /// Carga la profesión del usuario autenticado desde la colección 'usuarios' en Firestore.
+  /// Actualiza [_profesionUsuario] y [_cargandoProfesion] una vez que la operación finaliza.
   Future<void> _cargarProfesionUsuario() async {
+    // Verifica si hay un usuario autenticado.
     if (currentUser != null) {
       try {
+        // Obtiene el documento del usuario de Firestore usando su UID.
         final doc =
             await FirebaseFirestore.instance
                 .collection('usuarios')
                 .doc(currentUser!.uid)
                 .get();
 
+        // Si el documento existe, extrae la profesión y actualiza el estado.
         if (doc.exists) {
           setState(() {
             _profesionUsuario = doc.data()?['profesion'];
-            _cargandoProfesion = false;
+            _cargandoProfesion = false; // La carga ha terminado.
           });
         } else {
+          // Si el documento no existe, la carga ha terminado sin profesión.
           setState(() {
             _cargandoProfesion = false;
           });
         }
       } catch (e) {
+        // En caso de error, imprime el error y marca la carga como finalizada.
         print('Error al cargar profesión: $e');
         setState(() {
           _cargandoProfesion = false;
         });
       }
     } else {
+      // Si no hay usuario, la carga ha terminado sin profesión.
       setState(() {
         _cargandoProfesion = false;
       });
     }
   }
 
+  /// Construye la interfaz de usuario de la página del dashboard.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Permite que el cuerpo del Scaffold se extienda detrás de la AppBar.
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("Dashboard Empleado"),
+            // Muestra la profesión del usuario si ha sido cargada.
             if (_profesionUsuario != null)
               Text(
                 _profesionUsuario!,
@@ -75,10 +97,11 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
               ),
           ],
         ),
-        backgroundColor: Colors.blue[700]?.withOpacity(0.9),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: const Color(0xFF2C72B5),
+        foregroundColor: Colors.white, // Color del texto y íconos de la AppBar.
+        elevation: 0, // Sin sombra para la AppBar.
         actions: [
+          // Menú desplegable para acciones de usuario (Perfil, Cerrar Sesión).
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {
@@ -128,6 +151,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                 child: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Text(
+                    // Muestra la primera letra del email del usuario o 'U' si no hay email.
                     currentUser?.email?.substring(0, 1).toUpperCase() ?? 'U',
                     style: TextStyle(
                       color: Colors.blue[700],
@@ -142,6 +166,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
       ),
       body:
           _cargandoProfesion
+              // Muestra un indicador de carga mientras la profesión se está cargando.
               ? Stack(
                 fit: StackFit.expand,
                 children: [
@@ -149,76 +174,20 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                   const Center(child: CircularProgressIndicator()),
                 ],
               )
+              // Muestra el contenido principal del dashboard una vez que la profesión ha cargado.
               : Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset('assets/fondoazul.png', fit: BoxFit.cover),
+                  Image.asset(
+                    'assets/fondoazul.png',
+                    fit: BoxFit.cover,
+                  ), // Imagen de fondo.
                   SafeArea(
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
-                        // Botones de pestañas con estilo redondeado
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(50),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: List.generate(_tabs.length, (index) {
-                              return Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 2,
-                                  ),
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          _selectedTab == index
-                                              ? Colors.blue[700]
-                                              : Colors.transparent,
-                                      foregroundColor:
-                                          _selectedTab == index
-                                              ? Colors.white
-                                              : Colors.blue[700],
-                                      elevation: _selectedTab == index ? 4 : 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(25),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 12,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedTab = index;
-                                      });
-                                    },
-                                    child: Text(
-                                      _tabs[index],
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                        // Elimina el Container de pestañas aquí
+                        // const SizedBox(height: 16), // Elimina este también
                         Expanded(
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -236,7 +205,8 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
-                              child: _buildTabContent(),
+                              child:
+                                  _buildTabContent(), // Contenido dinámico de la pestaña.
                             ),
                           ),
                         ),
@@ -246,44 +216,86 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                   ),
                 ],
               ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedTab,
+        onTap: (index) {
+          setState(() {
+            _selectedTab = index;
+          });
+        },
+        selectedItemColor: const Color(0xFF2C72B5),
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_turned_in),
+            label: 'Mis Trabajos',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline),
+            label: 'Disponibles',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Historial',
+          ),
+        ],
+      ),
     );
   }
 
+  /// Retorna el widget correspondiente al contenido de la pestaña seleccionada.
   Widget _buildTabContent() {
     switch (_selectedTab) {
       case 0:
-        return _buildMisTrabajosTab();
+        return _buildMisTrabajosTab(); // Pestaña "Mis Trabajos".
       case 1:
-        return _buildTrabajosDisponiblesTab();
+        return _buildTrabajosDisponiblesTab(); // Pestaña "Disponibles".
       case 2:
-        return _buildHistorialTab();
+        return _buildHistorialTab(); // Pestaña "Historial".
       default:
-        return const SizedBox.shrink();
+        return const SizedBox.shrink(); // Widget vacío por defecto.
     }
   }
 
-  // Pestaña: Mis Trabajos (trabajos donde el empleado fue aceptado)
+  /// Construye la pestaña "Mis Trabajos".
+  /// Muestra los trabajos donde el empleado ha sido aceptado.
   Widget _buildMisTrabajosTab() {
+    // Si no hay un usuario autenticado, muestra un mensaje.
     if (currentUser == null) {
       return const Center(child: Text("No estás autenticado"));
     }
 
+    // Utiliza StreamBuilder para escuchar cambios en tiempo real en las aplicaciones.
     return StreamBuilder<QuerySnapshot>(
       stream:
           FirebaseFirestore.instance
               .collection('aplicaciones')
-              .where('empleadoId', isEqualTo: currentUser!.uid)
-              .where('estado', isEqualTo: 'aceptada')
+              .where(
+                'empleadoId',
+                isEqualTo: currentUser!.uid,
+              ) // Filtra por el ID del empleado actual.
+              .where(
+                'estado',
+                isEqualTo: 'aceptada',
+              ) // Filtra aplicaciones aceptadas.
               .snapshots(),
       builder: (context, snapshot) {
+        // Manejo de errores del Stream.
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
+        // Muestra un indicador de carga mientras se esperan los datos.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final aplicaciones = snapshot.data!.docs;
+        final aplicaciones =
+            snapshot
+                .data!
+                .docs; // Lista de documentos de aplicaciones aceptadas.
+
+        // Si no hay aplicaciones, muestra un mensaje informativo.
         if (aplicaciones.isEmpty) {
           return Center(
             child: Column(
@@ -317,9 +329,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
           );
         }
 
+        // Permite "tirar para refrescar" la lista.
         return RefreshIndicator(
           onRefresh: () async {
-            setState(() {});
+            setState(
+              () {},
+            ); // Fuerza una reconstrucción para refrescar los datos.
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -327,6 +342,8 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             itemBuilder: (context, index) {
               final aplicacion =
                   aplicaciones[index].data() as Map<String, dynamic>;
+
+              // Utiliza FutureBuilder para obtener los detalles del trabajo asociado a cada aplicación.
               return FutureBuilder<DocumentSnapshot>(
                 future:
                     FirebaseFirestore.instance
@@ -334,6 +351,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                         .doc(aplicacion['trabajoId'])
                         .get(),
                 builder: (context, trabajoSnapshot) {
+                  // Muestra un indicador de carga si los datos del trabajo aún no están disponibles.
                   if (!trabajoSnapshot.hasData) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -356,6 +374,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                     );
                   }
 
+                  // Si el trabajo no existe (fue eliminado), muestra un mensaje.
                   if (!trabajoSnapshot.data!.exists) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -390,7 +409,10 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                   }
 
                   final trabajo =
-                      trabajoSnapshot.data!.data() as Map<String, dynamic>;
+                      trabajoSnapshot.data!.data()
+                          as Map<String, dynamic>; // Datos del trabajo.
+
+                  // Muestra la tarjeta de cada trabajo aceptado.
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
@@ -480,6 +502,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
+                          // Cambia el color del estado según si el trabajo está activo o finalizado.
                           color:
                               trabajo['estado'] == 'activo'
                                   ? Colors.green
@@ -497,6 +520,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                           ),
                         ),
                       ),
+                      // Al tocar la tarjeta, muestra los detalles del trabajo y la aplicación.
                       onTap: () => _mostrarDetallesTrabajo(trabajo, aplicacion),
                     ),
                   );
@@ -509,8 +533,10 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     );
   }
 
-  // Pestaña: Trabajos Disponibles - FILTRADOS POR PROFESIÓN
+  /// Construye la pestaña "Trabajos Disponibles".
+  /// Muestra los trabajos con estado 'disponible' y que coinciden con la profesión del usuario.
   Widget _buildTrabajosDisponiblesTab() {
+    // Si la profesión del usuario no se pudo cargar, muestra un mensaje de advertencia.
     if (_profesionUsuario == null) {
       return Center(
         child: Column(
@@ -540,22 +566,34 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
       );
     }
 
+    // Utiliza StreamBuilder para escuchar cambios en tiempo real en los trabajos.
     return StreamBuilder<QuerySnapshot>(
       stream:
           FirebaseFirestore.instance
               .collection('trabajos')
-              .where('estado', isEqualTo: 'disponible')
-              .where('profesion', isEqualTo: _profesionUsuario)
+              .where(
+                'estado',
+                isEqualTo: 'disponible',
+              ) // Filtra trabajos disponibles.
+              .where(
+                'profesion',
+                isEqualTo: _profesionUsuario,
+              ) // Filtra por la profesión del usuario.
               .snapshots(),
       builder: (context, snapshot) {
+        // Manejo de errores del Stream.
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
+        // Muestra un indicador de carga mientras se esperan los datos.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final trabajos = snapshot.data!.docs;
+        final trabajos =
+            snapshot.data!.docs; // Lista de documentos de trabajos disponibles.
+
+        // Si no hay trabajos disponibles para la profesión del usuario, muestra un mensaje.
         if (trabajos.isEmpty) {
           return Center(
             child: Column(
@@ -593,7 +631,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
           );
         }
 
-        // Ordenar manualmente por fecha si existe
+        // Ordena los trabajos manualmente por fecha (más recientes primero).
         trabajos.sort((a, b) {
           final dataA = a.data() as Map<String, dynamic>;
           final dataB = b.data() as Map<String, dynamic>;
@@ -607,9 +645,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
           return fechaB.compareTo(fechaA);
         });
 
+        // Permite "tirar para refrescar" la lista.
         return RefreshIndicator(
           onRefresh: () async {
-            setState(() {});
+            setState(
+              () {},
+            ); // Fuerza una reconstrucción para refrescar los datos.
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -618,6 +659,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
               final trabajo = trabajos[index];
               final data = trabajo.data() as Map<String, dynamic>;
 
+              // Muestra la tarjeta de cada trabajo disponible.
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
@@ -711,6 +753,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                       ],
                     ],
                   ),
+                  // Muestra el estado de la aplicación o un botón para aplicar.
                   trailing: StreamBuilder<QuerySnapshot>(
                     stream:
                         FirebaseFirestore.instance
@@ -719,6 +762,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                             .where('empleadoId', isEqualTo: currentUser?.uid)
                             .snapshots(),
                     builder: (context, appSnapshot) {
+                      // Si ya existe una aplicación para este trabajo por el usuario actual.
                       if (appSnapshot.hasData &&
                           appSnapshot.data!.docs.isNotEmpty) {
                         final aplicacion =
@@ -728,6 +772,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
 
                         Color color;
                         String texto;
+                        // Determina el color y texto del estado de la aplicación.
                         switch (estado) {
                           case 'pendiente':
                             color = Colors.orange;
@@ -746,6 +791,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                             texto = 'DESCONOCIDO';
                         }
 
+                        // Muestra el estado de la aplicación.
                         return Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -766,13 +812,18 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                         );
                       }
 
+                      // Si no hay aplicación existente, muestra el botón "Aplicar".
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.green,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: ElevatedButton(
-                          onPressed: () => _aplicarATrabajo(trabajo.id, data),
+                          onPressed:
+                              () => _aplicarATrabajo(
+                                trabajo.id,
+                                data,
+                              ), // Llama a la función para aplicar.
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
@@ -792,7 +843,9 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                       );
                     },
                   ),
-                  onTap: () => _mostrarDetallesTrabajoDisponible(data),
+                  // Al tocar la tarjeta, muestra los detalles del trabajo disponible.
+                  onTap:
+                      () => _mostrarDetallesTrabajoDisponible(data, trabajo.id),
                 ),
               );
             },
@@ -802,27 +855,40 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     );
   }
 
-  // Pestaña: Historial
+  /// Construye la pestaña "Historial".
+  /// Muestra todas las aplicaciones del empleado (pendientes, aceptadas, rechazadas).
   Widget _buildHistorialTab() {
+    // Si no hay un usuario autenticado, muestra un mensaje.
     if (currentUser == null) {
       return const Center(child: Text("No estás autenticado"));
     }
 
+    // Utiliza StreamBuilder para escuchar cambios en tiempo real en las aplicaciones.
     return StreamBuilder<QuerySnapshot>(
       stream:
           FirebaseFirestore.instance
               .collection('aplicaciones')
-              .where('empleadoId', isEqualTo: currentUser!.uid)
+              .where(
+                'empleadoId',
+                isEqualTo: currentUser!.uid,
+              ) // Filtra por el ID del empleado actual.
               .snapshots(),
       builder: (context, snapshot) {
+        // Manejo de errores del Stream.
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
+        // Muestra un indicador de carga mientras se esperan los datos.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final aplicaciones = snapshot.data!.docs;
+        final aplicaciones =
+            snapshot
+                .data!
+                .docs; // Lista de documentos de todas las aplicaciones.
+
+        // Si no hay aplicaciones en el historial, muestra un mensaje informativo.
         if (aplicaciones.isEmpty) {
           return Center(
             child: Column(
@@ -852,7 +918,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
           );
         }
 
-        // Ordenar manualmente por fecha si existe
+        // Ordena las aplicaciones manualmente por fecha (más recientes primero).
         aplicaciones.sort((a, b) {
           final dataA = a.data() as Map<String, dynamic>;
           final dataB = b.data() as Map<String, dynamic>;
@@ -866,9 +932,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
           return fechaB.compareTo(fechaA);
         });
 
+        // Permite "tirar para refrescar" la lista.
         return RefreshIndicator(
           onRefresh: () async {
-            setState(() {});
+            setState(
+              () {},
+            ); // Fuerza una reconstrucción para refrescar los datos.
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -876,6 +945,8 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             itemBuilder: (context, index) {
               final aplicacion =
                   aplicaciones[index].data() as Map<String, dynamic>;
+
+              // Utiliza FutureBuilder para obtener los detalles del trabajo asociado a cada aplicación.
               return FutureBuilder<DocumentSnapshot>(
                 future:
                     FirebaseFirestore.instance
@@ -883,6 +954,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                         .doc(aplicacion['trabajoId'])
                         .get(),
                 builder: (context, trabajoSnapshot) {
+                  // Muestra un indicador de carga si los datos del trabajo aún no están disponibles.
                   if (!trabajoSnapshot.hasData) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -906,7 +978,10 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                   }
 
                   final trabajo =
-                      trabajoSnapshot.data!.data() as Map<String, dynamic>?;
+                      trabajoSnapshot.data!.data()
+                          as Map<String, dynamic>?; // Datos del trabajo.
+
+                  // Si el trabajo no existe (fue eliminado), muestra un mensaje específico.
                   if (trabajo == null) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -960,6 +1035,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
 
                   Color estadoColor;
                   IconData estadoIcon;
+                  // Determina el color y el ícono según el estado de la aplicación.
                   switch (aplicacion['estado']) {
                     case 'aceptada':
                       estadoColor = Colors.green;
@@ -969,11 +1045,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                       estadoColor = Colors.red;
                       estadoIcon = Icons.cancel;
                       break;
-                    default:
+                    default: // 'pendiente' o cualquier otro estado.
                       estadoColor = Colors.orange;
                       estadoIcon = Icons.pending;
                   }
 
+                  // Muestra la tarjeta de cada aplicación en el historial.
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
@@ -1063,6 +1140,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                           ),
                         ),
                       ),
+                      // Al tocar la tarjeta, muestra los detalles del trabajo y la aplicación.
                       onTap: () => _mostrarDetallesTrabajo(trabajo, aplicacion),
                     ),
                   );
@@ -1075,11 +1153,13 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     );
   }
 
-  // Función para aplicar a un trabajo
+  /// Función para permitir que un empleado aplique a un trabajo.
+  /// Muestra una confirmación y luego guarda la aplicación en Firestore.
   Future<void> _aplicarATrabajo(
     String trabajoId,
     Map<String, dynamic> trabajoData,
   ) async {
+    // Si no hay un usuario autenticado, muestra un SnackBar.
     if (currentUser == null) {
       ScaffoldMessenger.of(
         context,
@@ -1088,7 +1168,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     }
 
     try {
-      // Verificar si ya aplicó a este trabajo
+      // Verifica si el usuario ya aplicó a este trabajo para evitar duplicados.
       final existeAplicacion =
           await FirebaseFirestore.instance
               .collection('aplicaciones')
@@ -1110,7 +1190,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
         return;
       }
 
-      // Mostrar diálogo de confirmación
+      // Muestra un diálogo de confirmación antes de aplicar.
       final confirmar = await showDialog<bool>(
         context: context,
         builder:
@@ -1124,11 +1204,11 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () => Navigator.pop(context, false), // Cancelar.
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () => Navigator.pop(context, true), // Confirmar.
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
@@ -1141,9 +1221,10 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             ),
       );
 
+      // Si el usuario cancela la aplicación, no hace nada.
       if (confirmar != true) return;
 
-      // Crear la aplicación
+      // Crea un nuevo documento de aplicación en la colección 'aplicaciones'.
       await FirebaseFirestore.instance.collection('aplicaciones').add({
         'trabajoId': trabajoId,
         'empleadoId': currentUser!.uid,
@@ -1151,11 +1232,14 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             currentUser!.displayName ?? currentUser!.email ?? 'Anónimo',
         'empleadoEmail': currentUser!.email,
         'empleadorId': trabajoData['autorId'],
-        'estado': 'pendiente',
-        'fecha': FieldValue.serverTimestamp(),
-        'trabajoTitulo': trabajoData['titulo'],
+        'estado':
+            'pendiente', // El estado inicial de la aplicación es 'pendiente'.
+        'fecha': FieldValue.serverTimestamp(), // Marca de tiempo del servidor.
+        'trabajoTitulo':
+            trabajoData['titulo'], // Guarda el título del trabajo para referencia fácil.
       });
 
+      // Muestra un SnackBar de éxito.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("¡Aplicación enviada exitosamente!"),
@@ -1167,6 +1251,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
         ),
       );
     } catch (e) {
+      // Muestra un SnackBar con el error si la aplicación falla.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Error al aplicar: $e"),
@@ -1180,7 +1265,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     }
   }
 
-  // Mostrar detalles del trabajo
+  /// Muestra un diálogo con los detalles de un trabajo y el estado de la aplicación del usuario.
   void _mostrarDetallesTrabajo(
     Map<String, dynamic> trabajo,
     Map<String, dynamic> aplicacion,
@@ -1222,7 +1307,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context), // Cierra el diálogo.
                 child: const Text('Cerrar'),
               ),
             ],
@@ -1230,8 +1315,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     );
   }
 
-  // Mostrar detalles del trabajo disponible
-  void _mostrarDetallesTrabajoDisponible(Map<String, dynamic> trabajo) {
+  /// Muestra un diálogo con los detalles de un trabajo disponible.
+  /// Incluye un botón para aplicar al trabajo.
+  void _mostrarDetallesTrabajoDisponible(
+    Map<String, dynamic> trabajo,
+    String trabajoId,
+  ) {
     showDialog(
       context: context,
       builder:
@@ -1267,13 +1356,16 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context), // Cierra el diálogo.
                 child: const Text('Cerrar'),
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
-                  _aplicarATrabajo(trabajo['id'] ?? '', trabajo);
+                  Navigator.pop(context); // Cierra el diálogo antes de aplicar.
+                  _aplicarATrabajo(
+                    trabajoId,
+                    trabajo,
+                  ); // Llama a la función para aplicar.
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
@@ -1288,7 +1380,7 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     );
   }
 
-  // Mostrar perfil del usuario
+  /// Muestra un diálogo con la información del perfil del usuario actual.
   void _mostrarPerfil() {
     showDialog(
       context: context,
@@ -1308,14 +1400,14 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                 const SizedBox(height: 8),
                 Text('Profesión: ${_profesionUsuario ?? 'No especificada'}'),
                 const SizedBox(height: 8),
-                Text('Rol: Empleado'),
+                const Text('Rol: Empleado'), // Rol fijo para este dashboard.
                 const SizedBox(height: 8),
                 Text('ID: ${currentUser?.uid ?? 'No disponible'}'),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context), // Cierra el diálogo.
                 child: const Text('Cerrar'),
               ),
             ],
@@ -1323,8 +1415,9 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     );
   }
 
-  // Cerrar sesión
+  /// Cierra la sesión del usuario actual y navega a la pantalla de inicio.
   Future<void> _cerrarSesion() async {
+    // Muestra un diálogo de confirmación antes de cerrar sesión.
     final confirmar = await showDialog<bool>(
       context: context,
       builder:
@@ -1336,11 +1429,11 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
             content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(context, false), // Cancelar.
                 child: const Text('Cancelar'),
               ),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(context, true), // Confirmar.
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   shape: RoundedRectangleBorder(
@@ -1353,11 +1446,13 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
           ),
     );
 
+    // Si el usuario confirma, procede a cerrar sesión.
     if (confirmar == true) {
       try {
-        await FirebaseAuth.instance.signOut();
-        Navigator.pushReplacementNamed(context, '/');
+        await FirebaseAuth.instance.signOut(); // Cierra la sesión de Firebase.
+        Navigator.pushReplacementNamed(context, '/'); // Navega a la ruta raíz.
       } catch (e) {
+        // Muestra un SnackBar con el error si el cierre de sesión falla.
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al cerrar sesión: $e'),
@@ -1372,9 +1467,12 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
     }
   }
 
-  // Formatear fecha
+  /// Formatea un objeto Timestamp de Firestore a una cadena de fecha y hora legible.
+  /// Ejemplo: "18/06/2025 19:38"
   String _formatearFecha(Timestamp timestamp) {
-    final fecha = timestamp.toDate();
+    final fecha =
+        timestamp.toDate(); // Convierte el Timestamp a un objeto DateTime.
+    // Formatea la fecha y hora.
     return '${fecha.day}/${fecha.month}/${fecha.year} ${fecha.hour}:${fecha.minute.toString().padLeft(2, '0')}';
   }
 }
