@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Clase principal del Dashboard para empleados.
 /// Es un StatefulWidget porque su estado (pestaña seleccionada, profesión del usuario)
@@ -494,6 +495,20 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                               ),
                             ),
                           ),
+                          if (trabajo['direccion'] != null &&
+                              trabajo['direccion'].toString().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.map),
+                                label: const Text('Ver en Google Maps'),
+                                onPressed:
+                                    () => abrirGoogleMaps(
+                                      context,
+                                      trabajo['direccion'],
+                                    ),
+                              ),
+                            ),
                         ],
                       ),
                       trailing: Container(
@@ -1302,6 +1317,17 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
                       'Fecha de aplicación: ${_formatearFecha(aplicacion['fecha'] as Timestamp)}',
                     ),
                   ],
+                  if (trabajo['direccion'] != null &&
+                      trabajo['direccion'].toString().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text('Dirección: ${trabajo['direccion']}'),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.map),
+                      label: const Text('Ver en Google Maps'),
+                      onPressed:
+                          () => abrirGoogleMaps(context, trabajo['direccion']),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1474,5 +1500,24 @@ class _DashboardEmpleadoPageState extends State<DashboardEmpleadoPage> {
         timestamp.toDate(); // Convierte el Timestamp a un objeto DateTime.
     // Formatea la fecha y hora.
     return '${fecha.day}/${fecha.month}/${fecha.year} ${fecha.hour}:${fecha.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> abrirGoogleMaps(BuildContext context, String direccion) async {
+    if (direccion.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No hay dirección disponible")),
+      );
+      return;
+    }
+    final direccionCodificada = Uri.encodeComponent(direccion);
+    final url =
+        'https://www.google.com/maps/search/?api=1&query=$direccionCodificada';
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No se pudo abrir Google Maps")),
+      );
+    }
   }
 }
